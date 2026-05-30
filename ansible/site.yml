@@ -1,0 +1,62 @@
+---
+- name: Deploy lab4 HTTP service
+  hosts: lab4
+  become: yes
+  vars:
+    student_name: Gololobova
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - python3
+        state: present
+        update_cache: yes
+
+    - name: Create service directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0755
+      loop:
+        - /opt/lab4-service
+        - /opt/lab4-service/html
+
+    - name: Create index.html with student name
+      copy:
+        content: "<html><body><h1>{{ student_name }}</h1></body></html>"
+        dest: /opt/lab4-service/html/index.html
+        owner: www-data
+        group: www-data
+        mode: 0644
+
+    - name: Copy service.sh
+      copy:
+        src: ../service.sh
+        dest: /opt/lab4-service/service.sh
+        owner: www-data
+        group: www-data
+        mode: 0755
+
+    - name: Copy systemd unit file
+      copy:
+        src: ../lab4-service.service
+        dest: /etc/systemd/system/lab4-service.service
+        owner: root
+        group: root
+        mode: 0644
+      notify: reload systemd
+
+    - name: Enable and start lab4-service
+      systemd:
+        name: lab4-service
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
