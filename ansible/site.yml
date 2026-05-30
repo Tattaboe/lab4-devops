@@ -56,6 +56,18 @@
         state: started
         daemon_reload: yes
 
+    - name: Healthcheck via uri
+      uri:
+        url: http://localhost:8000/
+        return_content: yes
+        status_code: 200
+      register: healthcheck
+      failed_when: healthcheck.status != 200
+
+    - name: Show healthcheck result
+      debug:
+        msg: "Healthcheck passed. Content: {{ healthcheck.content }}"
+
   handlers:
     - name: reload systemd
       systemd:
